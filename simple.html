@@ -1,21 +1,33 @@
 <!DOCTYPE html>
 <html lang="ja">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Firebase:v9:Chatアプリ</title>
   </head>
   <body>
     <!-- コンテンツ表示画面 -->
 
     <div>
+      <div>入力エリア</div>
       <div>名前：<input type="text" id="uname" /></div>
       <div>
         <textarea id="text" cols="30" rows="10"></textarea>
         <button id="send">送信</button>
-        <button id="delete">削除</button>
       </div>
-      <div id="output" style="overflow: auto; height: 300px;"></div>
+      <div>削除エリア(削除したいkeyを入力してください)</div>
+      <div>
+        <textarea id="deleteKey" cols="30" rows="3"></textarea>
+        <button id="delete" class="del">削除</button>
+      </div>
+
+      <div
+        id="output"
+        style="overflow: auto; height: 300px; width:100%; border: 1px solid black;"
+      ></div>
     </div>
+    <button class="del">削除</button>
     <!--/ コンテンツ表示画面 -->
 
     <!-- JQuery -->
@@ -52,7 +64,7 @@
       const app = initializeApp(firebaseConfig);
       const db = getDatabase(app);
       const dbRef = ref(db, "chat");
-      const dbRefTest = ref(db, "chat/-N1smG4PR8nJ5a8RqIdO");
+
       // const dbRefChatC = ref(db, "chat/chatNum");
 
       //送信イベント
@@ -67,39 +79,52 @@
       });
 
       $("#delete").on("click", function () {
-        // remove(ref("/chat/-N1smIykbTMpR7kLZN9g"));
-        remove(dbRefTest);
-        console.log(dbRefTest);
+        console.log("osetayo");
+        const deleteKey = $("#deleteKey").val();
+        const dbRefDelete = ref(db, "chat/" + deleteKey);
+        remove(dbRefDelete);
       });
 
-      const arr = ["a", "b", "c"];
-      for (let i = 0; i < 4; i++) {
-        const num = arr[i];
-        console.log(arr[i]);
-        console.log(num);
-      }
+      $(document).on("click", 'button[data-btn^="btn"]', function () {
+        console.log("osetayo");
+
+        console.log($(this).data("btn"));
+        console.log($(this).data("btn").replace("btn", ""));
+        const deleteKey = $(this).data("btn").replace("btn", "");
+        const dbRefDelete = ref(db, "chat/" + deleteKey);
+        remove(dbRefDelete);
+      });
 
       //受信イベント
       onChildAdded(dbRef, function (data) {
         console.log(data); //書き足したdebugソース
         const msg = data.val();
         const key = data.key; //ユニークキーの取得
-        let h = '<p ';
-        h += 'data-id="';
+        let h = '<div id="';
         h += key;
-        h += '" >';
+        h += '">';
+        h += "<p>";
         h += msg.uname;
-        h += '<br>';
+        h += "<br>";
         h += msg.text;
-        h += '</p>';
+        h += "<br>";
+        h += key;
+        h += "</p>";
+        h += '<button data-btn="btn';
+        h += key;
+        h += '">';
+        h += "削除";
+        h += "</button>";
+        h += "</div>";
         $("#output").append(h);
       });
 
-      //削除イベント
-
-      // onChildRemoved(dbRef, (data) => {
-      //   // deleteComment(postElement, data.key);
-      // });
+      onChildRemoved(dbRef, function (data) {
+        console.log(data); //debug
+        const key = data.key; //ユニークキーの取得
+        console.log($("#" + key));
+        $("#" + key).remove();
+      });
     </script>
   </body>
 </html>
