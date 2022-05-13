@@ -13,18 +13,30 @@
       <div>入力エリア</div>
       <div>名前：<input type="text" id="uname" /></div>
       <div>
-        <textarea id="text" cols="30" rows="10"></textarea>
+        <textarea id="text" cols="30" rows="5"></textarea>
         <button id="send">送信</button>
       </div>
       <div>削除エリア(削除したいkeyを入力してください)</div>
       <div>
-        <textarea id="deleteKey" cols="30" rows="3"></textarea>
-        <button id="delete" class="del">削除</button>
+        <textarea id="deleteKey" cols="30" rows="2"></textarea>
+        <button id="delete">削除</button>
+      </div>
+      <div>編集エリア(編集したいkeyと名前、チャット内容を入力してください)</div>
+      <div>
+        <textarea id="updateKey" cols="30" rows="2"></textarea>
+        <textarea id="updateUName" cols="30" rows="2"></textarea>
+        <textarea id="updateText" cols="30" rows="5"></textarea>
+        <button id="update">更新</button>
       </div>
 
       <div
         id="output"
-        style="overflow: auto; height: 300px; width:100%; border: 1px solid black;"
+        style="
+          overflow: auto;
+          height: 300px;
+          width: 100%;
+          border: 1px solid black;
+        "
       ></div>
     </div>
     <button class="del">削除</button>
@@ -46,6 +58,7 @@
         onChildAdded,
         remove,
         onChildRemoved,
+        update
       } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
       // TODO: Add SDKs for Firebase products that you want to use
       // https://firebase.google.com/docs/web/setup#available-libraries
@@ -68,6 +81,7 @@
       // const dbRefChatC = ref(db, "chat/chatNum");
 
       //送信イベント
+      // 送信
       $("#send").on("click", function () {
         const msg = {
           uname: $("#uname").val(),
@@ -78,6 +92,7 @@
         set(newPostRef, msg);
       });
 
+      // 物理削除
       $("#delete").on("click", function () {
         console.log("osetayo");
         const deleteKey = $("#deleteKey").val();
@@ -94,6 +109,22 @@
         const dbRefDelete = ref(db, "chat/" + deleteKey);
         remove(dbRefDelete);
       });
+
+      // 更新
+      $("#update").on("click", function () {
+        console.log("更新ボタン押せた"); //debug
+        const updateKey = $("#updateKey").val();
+        const updateUName = $("#updateUName").val();
+        const updateText = $("#updateText").val();
+        const postData = {
+          uname : updateUName,
+          text : updateText
+        };
+        const updates = {};
+        updates['chat/' + updateKey] = postData;
+        update(ref(db), updates);
+      });
+
 
       //受信イベント
       onChildAdded(dbRef, function (data) {
