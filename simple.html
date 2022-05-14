@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./css/style.css" />
     <title>Firebase:v9:Chatアプリ</title>
   </head>
   <body>
@@ -58,7 +59,7 @@
         remove,
         onChildRemoved,
         update,
-        onChildChanged
+        onChildChanged,
       } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
       // TODO: Add SDKs for Firebase products that you want to use
       // https://firebase.google.com/docs/web/setup#available-libraries
@@ -111,6 +112,15 @@
         remove(dbRefDelete);
       });
 
+      // 論理削除 パターン1
+      $("#delete").on("click", function () {
+        console.log("osetayo");
+        const deleteKey = $("#deleteKey").val();
+        const dbRefDelete = ref(db, "chat/" + deleteKey);
+        remove(dbRefDelete);
+      });
+
+
       // 更新
       $("#update").on("click", function () {
         console.log("更新ボタン押せた"); //debug
@@ -133,9 +143,12 @@
         console.log(data); //書き足したdebugソース
         const msg = data.val();
         const key = data.key; //ユニークキーの取得
-        let h = '<div id="';
+
+        if (msg.uname == "taro") { // taroの場合、右表示
+          console.log("taro");
+          let h = '<div id="';
         h += key;
-        h += '">';
+        h += '" class="chat__right">';
         h += "<p>";
         h += msg.uname;
         h += "<br>";
@@ -150,8 +163,28 @@
         h += "</button>";
         h += "</div>";
         $("#output").append(h);
+        } else { //taro以外の場合、左表示
+          console.log("jiro");
+          let h = '<div id="';
+        h += key;
+        h += '" class="chat__left">';
+        h += "<p>";
+        h += msg.uname;
+        h += "<br>";
+        h += msg.text;
+        h += "<br>";
+        h += key;
+        h += "</p>";
+        h += '<button data-btn="btn';
+        h += key;
+        h += '">';
+        h += "削除";
+        h += "</button>";
+        h += "</div>";
+        $("#output").append(h);
+        }
       });
-      
+
       //子データ削除時
       onChildRemoved(dbRef, function (data) {
         console.log("chiid_removedイベントがトリガーされた");
