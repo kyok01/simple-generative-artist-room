@@ -87,27 +87,34 @@
       //送信イベント
       // 送信
       $("#send").on("click", function () {
-        const msg = {
-          uname: $("#uname").val(),
-          text: $("#text").val(),
-          deleteFrag: false,
-        };
-        // 唯一のkeyを取得する
-        const newPostRef = push(dbRef);
-        set(newPostRef, msg);
-        $("#uname").val("");
-        $("#text").val("");
-
+        //空白のまま送信されることを防ぐ
+        if ($("#uname").val() != "" && $("#text").val() != "") {
+          const msg = {
+            uname: $("#uname").val(),
+            text: $("#text").val(),
+            deleteFrag: false,
+          };
+          // 唯一のkeyを取得する
+          const newPostRef = push(dbRef);
+          set(newPostRef, msg);
+          // 送信後に入力欄を空白にする
+          $("#uname").val("");
+          $("#text").val("");
+        }
       });
 
       // 物理削除
       // 物理削除 パターン1
       $("#deletePhysical").on("click", function () {
+        //空白のまま削除されchat配下のデータが全て消されてしまうのを防ぐ
         console.log("物理削除ボタン押せたよ");
-        const deleteKey = $("#deleteKey").val();
-        const dbRefDelete = ref(db, "chat/" + deleteKey);
-        remove(dbRefDelete);
-        $("#deleteKey").val("");
+        if ($("#deleteKey").val() != "") {
+          const deleteKey = $("#deleteKey").val();
+          const dbRefDelete = ref(db, "chat/" + deleteKey);
+          remove(dbRefDelete);
+          // 削除後に入力欄を空白にする
+          $("#deleteKey").val("");
+        }
       });
 
       // 物理削除 パターン2、Fdはphysical Deletionの略
@@ -123,25 +130,29 @@
       // 論理削除 パターン1
       $("#deleteLogical").on("click", function () {
         console.log("理論削除ボタン押した");
-        const deleteKey = $("#deleteKey").val();
-        get(child(ref(db), `chat/${deleteKey}`))
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              console.log(snapshot.val()); //debug
-              const msg = {
-                uname: snapshot.val().uname,
-                text: snapshot.val().text,
-                deleteFrag: true,
-              };
-              set(child(ref(db), `chat/${deleteKey}`), msg);
-            } else {
-              console.log("No data available");
-            }
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-        $("#deleteKey").val("");
+        //空白のまま削除されchat配下のデータが全て消されてしまうのを防ぐ
+        if ($("#deleteKey").val() != "") {
+          const deleteKey = $("#deleteKey").val();
+          get(child(ref(db), `chat/${deleteKey}`))
+            .then((snapshot) => {
+              if (snapshot.exists()) {
+                console.log(snapshot.val()); //debug
+                const msg = {
+                  uname: snapshot.val().uname,
+                  text: snapshot.val().text,
+                  deleteFrag: true,
+                };
+                set(child(ref(db), `chat/${deleteKey}`), msg);
+              } else {
+                console.log("No data available");
+              }
+            })
+            .catch((error) => {
+              console.error(error);
+            });
+          // 削除後に入力欄を空白にする
+          $("#deleteKey").val("");
+        }
       });
 
       // 論理削除 パターン2、LdはLogical Deletionの略
@@ -173,7 +184,8 @@
         $("#updateText").val("");
       });
 
-      // 編集・更新 パターン2、Udはupdateの略
+      // 編集・更新 パターン2、Udはupdateの略、UEはupdate endの略
+      // 編集可能にするための処理
       $(document).on("click", 'button[data-btn^="btnUd"]', function () {
         console.log("編集ボタン押せたよ");
         console.log($(this).data("btn")); //thisでクリックされたそのものを取得して、そこに付与したdata-btn属性をdebugしている
@@ -181,14 +193,35 @@
         const updateKey = $(this).data("btn").slice(5);
         $(this).html("編集終了");
         $(this).removeAttr("data-btn");
-        $(this).attr("data-btn", "btnUding" + updateKey);
-        console.log(
-          $(`div[data-uname=uname${updateKey}]`)
-        );
-        $(`div[data-uname=uname${updateKey}]`).attr('contenteditable', 'true'); //2022-05-14ここまで終わった
-
-        // const dbRefDelete = ref(db, "chat/" + deleteKey);
-        // remove(dbRefDelete);
+        $(this).attr("data-btn", "btnUE" + updateKey);
+        console.log($(`div[data-uname=uname${updateKey}]`));
+        $(`div[data-uname=uname${updateKey}]`).attr("contenteditable", "true");
+        $(`div[data-text=text${updateKey}]`).attr("contenteditable", "true");
+      });
+      // 編集中状態を終わらせる処理
+      $(document).on("click", 'button[data-btn^="btnUE"]', function () {
+        console.log("編集終了ボタン押せたよ");
+        $(this).html("編集");
+        //編集対象のkeyやuname、textを取得
+        console.log($(this).data("btn")); //thisでクリックされたそのものを取得して、そこに付与したdata-btn属性をdebugしている
+        console.log($(this).data("btn").slice(5)); //replaceを使うともしkeyにbtnUdが含まれるとバグが起きるので、sliceを用いてbtnFd後の5の位置のみ切り出す
+        const updateEndKey = $(this).data("btn").slice(5);
+        $(this).removeAttr("data-btn");
+        $(this).attr("data-btn", "btnUd" + updateEndKey);
+        console.log($(`div[data-uname="uname${updateEndKey}"]`).html()); //debug
+        const updateUName = $(`div[data-uname="uname${updateEndKey}"]`).html(); //編集後のunameを取得
+        const updateText = $(`div[data-text="text${updateEndKey}"]`).html(); //編集後のunameを取得
+        //dataを送信
+        const postData = {
+          uname: updateUName,
+          text: updateText,
+          deleteFrag: false,
+        };
+        const updates = {};
+        updates["chat/" + updateEndKey] = postData;
+        update(ref(db), updates);
+        $(`div[data-uname=uname${updateEndKey}]`).attr("contenteditable", "false");
+        $(`div[data-text=text${updateEndKey}]`).attr("contenteditable", "false");
       });
 
       //受信イベント
@@ -211,11 +244,11 @@
             let h = '<div id="';
             h += key;
             h += '" class="chat__right">';
-            h += '<div data-uname="uname'
+            h += '<div data-uname="uname';
             h += key;
             h += '">';
             h += msg.uname;
-            h += '</div><div data-text="text'
+            h += '</div><div data-text="text';
             h += key;
             h += '">';
             h += msg.text;
@@ -245,13 +278,17 @@
             let h = '<div id="';
             h += key;
             h += '" class="chat__left">';
-            h += "<p>";
-            h += msg.uname;
-            h += "<br>";
-            h += msg.text;
-            h += "<br>";
+            h += '<div data-uname="uname';
             h += key;
-            h += "</p>";
+            h += '">';
+            h += msg.uname;
+            h += '</div><div data-text="text';
+            h += key;
+            h += '">';
+            h += msg.text;
+            h += "</div><div>";
+            h += key;
+            h += "</div>";
             h += '<button data-btn="btnFd';
             h += key;
             h += '">';
@@ -315,6 +352,7 @@
           updateH += '">';
           updateH += "編集";
           updateH += "</button>";
+          // 該当するチャットのみ編集する
           $("#" + key).html(updateH);
         }
       });
