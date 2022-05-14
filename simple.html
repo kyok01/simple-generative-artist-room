@@ -154,7 +154,7 @@
         remove(dbRefDelete);
       });
 
-      // 編集・更新
+      // 編集・更新 パターン1
       $("#update").on("click", function () {
         console.log("更新ボタン押せた"); //debug
         const updateKey = $("#updateKey").val();
@@ -173,6 +173,24 @@
         $("#updateText").val("");
       });
 
+      // 編集・更新 パターン2、Udはupdateの略
+      $(document).on("click", 'button[data-btn^="btnUd"]', function () {
+        console.log("編集ボタン押せたよ");
+        console.log($(this).data("btn")); //thisでクリックされたそのものを取得して、そこに付与したdata-btn属性をdebugしている
+        console.log($(this).data("btn").slice(5)); //replaceを使うともしkeyにbtnUdが含まれるとバグが起きるので、sliceを用いてbtnFd後の5の位置のみ切り出す
+        const updateKey = $(this).data("btn").slice(5);
+        $(this).html("編集終了");
+        $(this).removeAttr("data-btn");
+        $(this).attr("data-btn", "btnUding" + updateKey);
+        console.log(
+          $(`div[data-uname=uname${updateKey}]`)
+        );
+        $(`div[data-uname=uname${updateKey}]`).attr('contenteditable', 'true'); //2022-05-14ここまで終わった
+
+        // const dbRefDelete = ref(db, "chat/" + deleteKey);
+        // remove(dbRefDelete);
+      });
+
       //受信イベント
       //読み込み時と子データ追加時
       onChildAdded(dbRef, function (data) {
@@ -188,18 +206,22 @@
           //deleteFragがfalseなので、チャットとして表示する
           console.log("deleteFragがfalseなので表示する");
           if (msg.uname == "taro") {
-            // taroの場合、右表示
+            // taroの場合、右表示。
             console.log("taroだよ");
             let h = '<div id="';
             h += key;
             h += '" class="chat__right">';
-            h += "<p>";
-            h += msg.uname;
-            h += "<br>";
-            h += msg.text;
-            h += "<br>";
+            h += '<div data-uname="uname'
             h += key;
-            h += "</p>";
+            h += '">';
+            h += msg.uname;
+            h += '</div><div data-text="text'
+            h += key;
+            h += '">';
+            h += msg.text;
+            h += "</div><div>";
+            h += key;
+            h += "</div>";
             h += '<button data-btn="btnFd';
             h += key;
             h += '">';
@@ -209,6 +231,11 @@
             h += key;
             h += '">';
             h += "論理削除";
+            h += "</button>";
+            h += '<button data-btn="btnUd';
+            h += key;
+            h += '">';
+            h += "編集";
             h += "</button>";
             h += "</div>";
             $("#output").append(h);
@@ -234,6 +261,11 @@
             h += key;
             h += '">';
             h += "論理削除";
+            h += "</button>";
+            h += '<button data-btn="btnUd';
+            h += key;
+            h += '">';
+            h += "編集";
             h += "</button>";
             h += "</div>";
             $("#output").append(h);
@@ -277,6 +309,11 @@
           updateH += key;
           updateH += '">';
           updateH += "論理削除";
+          updateH += "</button>";
+          updateH += '<button data-btn="btnUd';
+          updateH += key;
+          updateH += '">';
+          updateH += "編集";
           updateH += "</button>";
           $("#" + key).html(updateH);
         }
