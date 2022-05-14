@@ -33,13 +33,12 @@
         id="output"
         style="
           overflow: auto;
-          height: 300px;
+          height: 500px;
           width: 100%;
           border: 1px solid black;
         "
       ></div>
     </div>
-    <button class="del">削除</button>
     <!--/ コンテンツ表示画面 -->
 
     <!-- JQuery -->
@@ -58,7 +57,8 @@
         onChildAdded,
         remove,
         onChildRemoved,
-        update
+        update,
+        onChildChanged
       } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
       // TODO: Add SDKs for Firebase products that you want to use
       // https://firebase.google.com/docs/web/setup#available-libraries
@@ -93,6 +93,7 @@
       });
 
       // 物理削除
+      // 物理削除 パターン1
       $("#delete").on("click", function () {
         console.log("osetayo");
         const deleteKey = $("#deleteKey").val();
@@ -100,10 +101,10 @@
         remove(dbRefDelete);
       });
 
+      // 物理削除 パターン2
       $(document).on("click", 'button[data-btn^="btn"]', function () {
         console.log("osetayo");
-
-        console.log($(this).data("btn"));
+        console.log($(this).data("btn")); //thisでクリックされたそのものを取得して、そこに付与したdata-btn属性をdebugしている
         console.log($(this).data("btn").replace("btn", ""));
         const deleteKey = $(this).data("btn").replace("btn", "");
         const dbRefDelete = ref(db, "chat/" + deleteKey);
@@ -117,17 +118,18 @@
         const updateUName = $("#updateUName").val();
         const updateText = $("#updateText").val();
         const postData = {
-          uname : updateUName,
-          text : updateText
+          uname: updateUName,
+          text: updateText,
         };
         const updates = {};
-        updates['chat/' + updateKey] = postData;
+        updates["chat/" + updateKey] = postData;
         update(ref(db), updates);
       });
 
-
       //受信イベント
+      //読み込み時と子データ追加時
       onChildAdded(dbRef, function (data) {
+        console.log("child_addedイベントがトリガーされた");
         console.log(data); //書き足したdebugソース
         const msg = data.val();
         const key = data.key; //ユニークキーの取得
@@ -149,12 +151,36 @@
         h += "</div>";
         $("#output").append(h);
       });
-
+      
+      //子データ削除時
       onChildRemoved(dbRef, function (data) {
+        console.log("chiid_removedイベントがトリガーされた");
         console.log(data); //debug
         const key = data.key; //ユニークキーの取得
         console.log($("#" + key));
         $("#" + key).remove();
+      });
+
+      //子データの変更時
+      onChildChanged(dbRef, function (data) {
+        console.log("child_changedイベントがトリガーされた");
+        console.log(data); //debug
+        const key = data.key;
+        const msg = data.val();
+        console.log($("#" + key));
+        let updateH = "<p>";
+        updateH += msg.uname;
+        updateH += "<br>";
+        updateH += msg.text;
+        updateH += "<br>";
+        updateH += key;
+        updateH += "</p>";
+        updateH += '<button data-btn="btn';
+        updateH += key;
+        updateH += '">';
+        updateH += "削除";
+        updateH += "</button>";
+        $("#" + key).html(updateH);
       });
     </script>
   </body>
