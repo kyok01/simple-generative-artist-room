@@ -20,7 +20,8 @@
       <div>削除エリア(削除したいkeyを入力してください)</div>
       <div>
         <textarea id="deleteKey" cols="30" rows="2"></textarea>
-        <button id="delete">削除</button>
+        <button id="deletePhysical">物理削除</button>
+        <button id="deleteLogical">論理削除</button>
       </div>
       <div>編集エリア(編集したいkeyと名前、チャット内容を入力してください)</div>
       <div>
@@ -60,6 +61,8 @@
         onChildRemoved,
         update,
         onChildChanged,
+        get,
+        child,
       } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
       // TODO: Add SDKs for Firebase products that you want to use
       // https://firebase.google.com/docs/web/setup#available-libraries
@@ -87,41 +90,71 @@
         const msg = {
           uname: $("#uname").val(),
           text: $("#text").val(),
+          deleteFrag: false,
         };
         // 唯一のkeyを取得する
         const newPostRef = push(dbRef);
         set(newPostRef, msg);
+        $("#uname").val("");
+        $("#text").val("");
+
       });
 
       // 物理削除
       // 物理削除 パターン1
-      $("#delete").on("click", function () {
-        console.log("osetayo");
+      $("#deletePhysical").on("click", function () {
+        console.log("物理削除ボタン押せたよ");
         const deleteKey = $("#deleteKey").val();
         const dbRefDelete = ref(db, "chat/" + deleteKey);
         remove(dbRefDelete);
+        $("#deleteKey").val("");
       });
 
-      // 物理削除 パターン2
-      $(document).on("click", 'button[data-btn^="btn"]', function () {
+      // 物理削除 パターン2、Fdはphysical Deletionの略
+      $(document).on("click", 'button[data-btn^="btnFd"]', function () {
         console.log("osetayo");
         console.log($(this).data("btn")); //thisでクリックされたそのものを取得して、そこに付与したdata-btn属性をdebugしている
-        console.log($(this).data("btn").replace("btn", ""));
-        const deleteKey = $(this).data("btn").replace("btn", "");
+        console.log($(this).data("btn").slice(5)); //replaceを使うともしkeyにbtnFdが含まれるとバグが起きるので、sliceを用いてbtnFd後の5の位置のみ切り出す
+        const deleteKey = $(this).data("btn").slice(5);
         const dbRefDelete = ref(db, "chat/" + deleteKey);
         remove(dbRefDelete);
       });
 
       // 論理削除 パターン1
-      $("#delete").on("click", function () {
-        console.log("osetayo");
+      $("#deleteLogical").on("click", function () {
+        console.log("理論削除ボタン押した");
         const deleteKey = $("#deleteKey").val();
+        get(child(ref(db), `chat/${deleteKey}`))
+          .then((snapshot) => {
+            if (snapshot.exists()) {
+              console.log(snapshot.val()); //debug
+              const msg = {
+                uname: snapshot.val().uname,
+                text: snapshot.val().text,
+                deleteFrag: true,
+              };
+              set(child(ref(db), `chat/${deleteKey}`), msg);
+            } else {
+              console.log("No data available");
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+        $("#deleteKey").val("");
+      });
+
+      // 論理削除 パターン2、LdはLogical Deletionの略
+      $(document).on("click", 'button[data-btn^="btnLd"]', function () {
+        console.log("osetayo");
+        console.log($(this).data("btn")); //thisでクリックされたそのものを取得して、そこに付与したdata-btn属性をdebugしている
+        console.log($(this).data("btn").slice(5)); //replaceを使うともしkeyにbtnFdが含まれるとバグが起きるので、sliceを用いてbtnFd後の5の位置のみ切り出す
+        const deleteKey = $(this).data("btn").slice(5);
         const dbRefDelete = ref(db, "chat/" + deleteKey);
         remove(dbRefDelete);
       });
 
-
-      // 更新
+      // 編集・更新
       $("#update").on("click", function () {
         console.log("更新ボタン押せた"); //debug
         const updateKey = $("#updateKey").val();
@@ -130,10 +163,14 @@
         const postData = {
           uname: updateUName,
           text: updateText,
+          deleteFrag: false,
         };
         const updates = {};
         updates["chat/" + updateKey] = postData;
         update(ref(db), updates);
+        $("#updateKey").val("");
+        $("#updateUName").val("");
+        $("#updateText").val("");
       });
 
       //受信イベント
@@ -144,44 +181,63 @@
         const msg = data.val();
         const key = data.key; //ユニークキーの取得
 
-        if (msg.uname == "taro") { // taroの場合、右表示
-          console.log("taro");
-          let h = '<div id="';
-        h += key;
-        h += '" class="chat__right">';
-        h += "<p>";
-        h += msg.uname;
-        h += "<br>";
-        h += msg.text;
-        h += "<br>";
-        h += key;
-        h += "</p>";
-        h += '<button data-btn="btn';
-        h += key;
-        h += '">';
-        h += "削除";
-        h += "</button>";
-        h += "</div>";
-        $("#output").append(h);
-        } else { //taro以外の場合、左表示
-          console.log("jiro");
-          let h = '<div id="';
-        h += key;
-        h += '" class="chat__left">';
-        h += "<p>";
-        h += msg.uname;
-        h += "<br>";
-        h += msg.text;
-        h += "<br>";
-        h += key;
-        h += "</p>";
-        h += '<button data-btn="btn';
-        h += key;
-        h += '">';
-        h += "削除";
-        h += "</button>";
-        h += "</div>";
-        $("#output").append(h);
+        if (msg.deleteFrag) {
+          //deleteFragがtrueで理論削除されている場合は、チャットとして表示しない
+          console.log("deleteFragがtrueなので表示しない");
+        } else {
+          //deleteFragがfalseなので、チャットとして表示する
+          console.log("deleteFragがfalseなので表示する");
+          if (msg.uname == "taro") {
+            // taroの場合、右表示
+            console.log("taroだよ");
+            let h = '<div id="';
+            h += key;
+            h += '" class="chat__right">';
+            h += "<p>";
+            h += msg.uname;
+            h += "<br>";
+            h += msg.text;
+            h += "<br>";
+            h += key;
+            h += "</p>";
+            h += '<button data-btn="btnFd';
+            h += key;
+            h += '">';
+            h += "物理削除";
+            h += "</button>";
+            h += '<button data-btn="btnLd';
+            h += key;
+            h += '">';
+            h += "論理削除";
+            h += "</button>";
+            h += "</div>";
+            $("#output").append(h);
+          } else {
+            //taro以外の場合、左表示
+            console.log("taroじゃない");
+            let h = '<div id="';
+            h += key;
+            h += '" class="chat__left">';
+            h += "<p>";
+            h += msg.uname;
+            h += "<br>";
+            h += msg.text;
+            h += "<br>";
+            h += key;
+            h += "</p>";
+            h += '<button data-btn="btnFd';
+            h += key;
+            h += '">';
+            h += "物理削除";
+            h += "</button>";
+            h += '<button data-btn="btnLd';
+            h += key;
+            h += '">';
+            h += "論理削除";
+            h += "</button>";
+            h += "</div>";
+            $("#output").append(h);
+          }
         }
       });
 
@@ -200,20 +256,30 @@
         console.log(data); //debug
         const key = data.key;
         const msg = data.val();
-        console.log($("#" + key));
-        let updateH = "<p>";
-        updateH += msg.uname;
-        updateH += "<br>";
-        updateH += msg.text;
-        updateH += "<br>";
-        updateH += key;
-        updateH += "</p>";
-        updateH += '<button data-btn="btn';
-        updateH += key;
-        updateH += '">';
-        updateH += "削除";
-        updateH += "</button>";
-        $("#" + key).html(updateH);
+        if (msg.deleteFrag) {
+          //deleteKeyがtrueで理論削除されている場合は、チャットとして表示しない
+          $("#" + key).remove();
+        } else {
+          //deleteKeyがfalseで理論削除されてなければ、チャットを編集して表示する
+          let updateH = "<p>";
+          updateH += msg.uname;
+          updateH += "<br>";
+          updateH += msg.text;
+          updateH += "<br>";
+          updateH += key;
+          updateH += "</p>";
+          updateH += '<button data-btn="btnFd';
+          updateH += key;
+          updateH += '">';
+          updateH += "物理削除";
+          updateH += "</button>";
+          updateH += '<button data-btn="btnLd';
+          updateH += key;
+          updateH += '">';
+          updateH += "論理削除";
+          updateH += "</button>";
+          $("#" + key).html(updateH);
+        }
       });
     </script>
   </body>
