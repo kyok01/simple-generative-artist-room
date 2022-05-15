@@ -25,9 +25,9 @@
       </div>
       <div>編集エリア(編集したいkeyと名前、チャット内容を入力してください)</div>
       <div>
-        <textarea id="updateKey" cols="30" rows="2"></textarea>
-        <textarea id="updateUName" cols="30" rows="2"></textarea>
-        <textarea id="updateText" cols="30" rows="5"></textarea>
+        key<textarea id="updateKey" cols="30" rows="2"></textarea>
+        名前<textarea id="updateUName" cols="30" rows="2"></textarea>
+        チャット内容<textarea id="updateText" cols="30" rows="5"></textarea>
         <button id="update">更新</button>
       </div>
 
@@ -238,74 +238,46 @@
         } else {
           //deleteFragがfalseなので、チャットとして表示する
           console.log("deleteFragがfalseなので表示する");
+          let h = '<div id="';
+            h += key;
+            h += '">';
+            h += '<div data-uname="uname';
+            h += key;
+            h += '">';
+            h += msg.uname;
+            h += '</div><div data-text="text';
+            h += key;
+            h += '">';
+            h += msg.text;
+            h += "</div><div>";
+            h += key;
+            h += "</div>";
+            h += '<button data-btn="btnFd';
+            h += key;
+            h += '">';
+            h += "物理削除";
+            h += "</button>";
+            h += '<button data-btn="btnLd';
+            h += key;
+            h += '">';
+            h += "論理削除";
+            h += "</button>";
+            h += '<button data-btn="btnUd';
+            h += key;
+            h += '">';
+            h += "編集";
+            h += "</button>";
+            h += "</div>";
+            $("#output").append(h);
+
           if (msg.uname == "taro") {
             // taroの場合、右表示。
             console.log("taroだよ");
-            let h = '<div id="';
-            h += key;
-            h += '" class="chat__right">';
-            h += '<div data-uname="uname';
-            h += key;
-            h += '">';
-            h += msg.uname;
-            h += '</div><div data-text="text';
-            h += key;
-            h += '">';
-            h += msg.text;
-            h += "</div><div>";
-            h += key;
-            h += "</div>";
-            h += '<button data-btn="btnFd';
-            h += key;
-            h += '">';
-            h += "物理削除";
-            h += "</button>";
-            h += '<button data-btn="btnLd';
-            h += key;
-            h += '">';
-            h += "論理削除";
-            h += "</button>";
-            h += '<button data-btn="btnUd';
-            h += key;
-            h += '">';
-            h += "編集";
-            h += "</button>";
-            h += "</div>";
-            $("#output").append(h);
+            $('#'+key).attr('class', 'chat__right');
           } else {
             //taro以外の場合、左表示
             console.log("taroじゃない");
-            let h = '<div id="';
-            h += key;
-            h += '" class="chat__left">';
-            h += '<div data-uname="uname';
-            h += key;
-            h += '">';
-            h += msg.uname;
-            h += '</div><div data-text="text';
-            h += key;
-            h += '">';
-            h += msg.text;
-            h += "</div><div>";
-            h += key;
-            h += "</div>";
-            h += '<button data-btn="btnFd';
-            h += key;
-            h += '">';
-            h += "物理削除";
-            h += "</button>";
-            h += '<button data-btn="btnLd';
-            h += key;
-            h += '">';
-            h += "論理削除";
-            h += "</button>";
-            h += '<button data-btn="btnUd';
-            h += key;
-            h += '">';
-            h += "編集";
-            h += "</button>";
-            h += "</div>";
-            $("#output").append(h);
+            $('#'+key).attr('class', 'chat__left');
           }
         }
       });
